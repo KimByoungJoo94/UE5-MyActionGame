@@ -1,6 +1,8 @@
-#include "Animation/MyAnimInstance.h"
-#include "GameFramework/Character.h"
+#include "MyAnimInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Character/MyCharacter.h"
+#include "Components/MyStateComponent.h"
+
 
 UMyAnimInstance::UMyAnimInstance()
 {
@@ -11,10 +13,10 @@ void UMyAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
 
-	Character = Cast<ACharacter>(GetOwningActor());
-	if (Character)
+	OwningCharacter = Cast<ACharacter>(GetOwningActor());
+	if (OwningCharacter)
 	{
-		CharacterMovementComponent = Character->GetCharacterMovement();
+		OwningCharacterMovementComponent = OwningCharacter->GetCharacterMovement();
 	}
 }
 
@@ -22,12 +24,23 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
 	Super::NativeUpdateAnimation(DeltaSeconds);
 
-	if (Character && CharacterMovementComponent)
-	{
-		Velocity = CharacterMovementComponent->Velocity;
+	if (OwningCharacter && OwningCharacterMovementComponent)
+	{	
+		Velocity = OwningCharacterMovementComponent->Velocity;
 		GroundSpeed = Velocity.Size2D();
 
-		bShouldMove = GroundSpeed > 3.0f && CharacterMovementComponent->GetCurrentAcceleration().Equals(FVector::ZeroVector) == false;
-		bIsFalling = CharacterMovementComponent->IsFalling();
+		bShouldMove = GroundSpeed > 3.0f && OwningCharacterMovementComponent->GetCurrentAcceleration().Equals(FVector::ZeroVector) == false;
+		bIsFalling = OwningCharacterMovementComponent->IsFalling();
+	}
+}
+
+void UMyAnimInstance::AnimNotify_ResetMovementInput()
+{
+	if (AMyCharacter* MyCharacter = Cast<AMyCharacter>(OwningCharacter))
+	{
+		if (UMyStateComponent* StateComponent = MyCharacter->GetStateComponent())
+		{
+			StateComponent->ToggleMovementInput(true, 0.0f);
+		}
 	}
 }

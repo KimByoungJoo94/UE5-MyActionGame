@@ -17,13 +17,16 @@ public:
 
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+	
+	UFUNCTION()
+	void AnimNotify_ResetMovementInput();
 
 protected:
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "MyAction|Reference")
-	TObjectPtr<ACharacter> Character;
+	TObjectPtr<ACharacter> OwningCharacter;
 	
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "MyAction|Reference")
-	TObjectPtr<UCharacterMovementComponent> CharacterMovementComponent;
+	TObjectPtr<UCharacterMovementComponent> OwningCharacterMovementComponent;
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "MyAction|MovementData")
 	FVector Velocity;

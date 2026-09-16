@@ -6,8 +6,13 @@
 
 class USpringArmComponent;
 class UCameraComponent;
+class UMyAttributeComponent;
 class UInputMappingContext;
 class UInputAction;
+class UMyPlayHUDWidget;
+class UMyStateComponent;
+class UMyCombatComponent;
+class UAnimMontage;
 
 struct FInputActionValue;
 
@@ -27,9 +32,22 @@ public:
 	virtual void NotifyControllerChanged() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	bool IsMoving() const;
+
+	FORCEINLINE TObjectPtr<UMyStateComponent> GetStateComponent()  { return StateComponent; }
+
 protected:
-	void OnMoveAction(const FInputActionValue& InValue);
-	void OnLookAction(const FInputActionValue& InValue);
+	void OnMoveActionTriggered(const FInputActionValue& InValue);
+	void OnLookActionTriggered(const FInputActionValue& InValue);
+	void OnSprintRollingActionTriggered();
+	void OnSprintRollingActionCompleted();
+	void OnSprintRollingActionCanceled();
+	void OnInteractActionStarted();
+	
+	void StartSprint();
+	void StopSprint();
+	void DoRolling();
+	void DoInteraction();
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "MyAction|Camera")
@@ -38,12 +56,43 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "MyAction|Camera")
 	TObjectPtr<UCameraComponent> CameraComponent;
 
+	UPROPERTY(VisibleAnywhere, Category = "MyAction|Attribute", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UMyAttributeComponent> AttributeComponent;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Sprint")
+	float SprintSpeed = 750.0f;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Sprint")
+	float NormalSpeed = 750.0f;
+
+	UPROPERTY(VisibleAnywhere, Category = "MyAction|Attribute", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UMyStateComponent> StateComponent;
+
+	UPROPERTY(VisibleAnywhere, Category = "MyAction|Combat", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UMyCombatComponent> CombatComponent;
+	
 	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
 	TObjectPtr<UInputMappingContext> DefaultInputMappingContext;
-	
+
 	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
 	TObjectPtr<UInputAction> MoveAction;
 
 	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
 	TObjectPtr<UInputAction> LookAction;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
+	TObjectPtr<UInputAction> SprintRollingAction;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
+	TObjectPtr<UInputAction> InteractAction;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "MyAction|UI")
+	TSubclassOf<UMyPlayHUDWidget> PlayHUDWidgetClass;
+	
+	UPROPERTY(EditAnywhere, Category = "MyAction|UI")
+	TObjectPtr<UMyPlayHUDWidget> PlayHUDWidget;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Anim")
+	TObjectPtr<UAnimMontage> RollingAnimMontage;
 };
