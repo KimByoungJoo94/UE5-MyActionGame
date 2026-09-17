@@ -13,6 +13,7 @@
 #include "UI/MyPlayHUDWidget.h"
 #include "Common/MyGameplayTags.h"
 #include "Interfaces/MyInteractionInterface.h"
+#include "Equipments/MyWeapon.h"
 
 
 AMyCharacter::AMyCharacter()
@@ -89,20 +90,72 @@ bool AMyCharacter::IsMoving() const
 	return false;
 }
 
+bool AMyCharacter::CanToggleCombat() const
+{	
+	if (StateComponent)
+	{
+		FGameplayTagContainer GameplayTagContainer;
+		GameplayTagContainer.AddTag(MyGameplayTags::Character_State_Attacking);
+		GameplayTagContainer.AddTag(MyGameplayTags::Character_State_Rolling);
+		GameplayTagContainer.AddTag(MyGameplayTags::Character_State_GeneralAction);
+
+		return StateComponent->IsCurrentStateEqualToAny(GameplayTagContainer) == false;
+	}
+
+	return false;
+}
+
+const FGameplayTag AMyCharacter::GetAttackPerform() const
+{
+	if (IsSprinting())
+	{
+		return MyGameplayTags::Character_Attack_Running;
+	}
+
+	return MyGameplayTags::Character_Attack_Light;
+}
+
+bool AMyCharacter::CanPerformAttack(const FGameplayTag& InAttackGameplayTag) const
+{
+	if (IsValid(StateComponent) == false || 
+		IsValid(AttributeComponent) == false ||
+		IsValid(CombatComponent) == false || 
+		IsValid(CombatComponent->GetMainWeapon()) == false)
+	{
+		return false;
+	}
+
+	FGameplayTagContainer GameplayTagContainer;
+	GameplayTagContainer.AddTag(MyGameplayTags::Character_State_Rolling);
+	GameplayTagContainer.AddTag(MyGameplayTags::Character_State_GeneralAction);
+
+	const float StaminaCost = CombatComponent->GetMainWeapon()->GetStaminaCost(InAttackGameplayTag);
+
+	return StateComponent->IsCurrentStateEqualToAny(GameplayTagContainer) == false && 
+		CombatComponent->IsCombatEnabld() &&
+		AttributeComponent->HasEnounghStamina(StaminaCost);
+}
+
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{		
-		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AMyCharacter::OnMoveActionTriggered);
-		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AMyCharacter::OnLookActionTriggered);
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ThisClass::OnMoveActionTriggered);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::OnLookActionTriggered);
 		
-		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Triggered, this, &AMyCharacter::OnSprintRollingActionTriggered);
-		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Completed, this, &AMyCharacter::OnSprintRollingActionCompleted);
-		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Canceled, this, &AMyCharacter::OnSprintRollingActionCanceled);
+		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Triggered, this, &ThisClass::OnSprintRollingActionTriggered);
+		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Completed, this, &ThisClass::OnSprintRollingActionCompleted);
+		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Canceled, this, &ThisClass::OnSprintRollingActionCanceled);
 
-		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &AMyCharacter::OnInteractActionStarted);
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Started, this, &ThisClass::OnInteractActionStarted);
+		EnhancedInputComponent->BindAction(ToggleCombatAction, ETriggerEvent::Started, this, &ThisClass::OnToggleCombatActionStarted);
+
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ThisClass::OnAttackActionStarted);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Canceled, this, &ThisClass::OnAttackActionCanceled);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::OnAttackActionTriggered);
+		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ThisClass::OnHeavyAttackActionStarted);
 	}
 }
 
@@ -164,6 +217,34 @@ void AMyCharacter::OnInteractActionStarted()
 	DoInteraction();
 }
 
+void AMyCharacter::OnToggleCombatActionStarted()
+{
+	if (CanToggleCombat())
+	{
+		DoToggleCombat();
+	}
+}
+
+void AMyCharacter::OnAttackActionStarted()
+{
+	AutoToggleCombat();
+}
+
+void AMyCharacter::OnAttackActionCanceled()
+{
+	DoAttack();
+}
+
+void AMyCharacter::OnAttackActionTriggered()
+{
+	DoSpecialAttack();
+}
+
+void AMyCharacter::OnHeavyAttackActionStarted()
+{
+	DoHeavyAttack();
+}
+
 void AMyCharacter::StartSprint()
 {
 	if (UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement())
@@ -173,6 +254,7 @@ void AMyCharacter::StartSprint()
 		{
 			AttributeComponent->ToggleRegenerateStamina(false);
 			AttributeComponent->DecreaseStamina(0.1f);
+			bSprinting = false;
 		}
 	}
 }
@@ -185,6 +267,7 @@ void AMyCharacter::StopSprint()
 		if (AttributeComponent)
 		{
 			AttributeComponent->ToggleRegenerateStamina(true);
+			bSprinting = true;
 		}
 	}
 }
@@ -226,3 +309,116 @@ void AMyCharacter::DoInteraction()
 		}
 	}
 }
+
+void AMyCharacter::DoToggleCombat()
+{
+	if (CombatComponent && StateComponent)
+	{
+		if (const AMyWeapon* MainWeapon = CombatComponent->GetMainWeapon())
+		{			
+			StateComponent->SetState(MyGameplayTags::Character_State_GeneralAction);
+
+			if (CombatComponent->IsCombatEnabld())
+			{
+				PlayAnimMontage(MainWeapon->GetMontage(MyGameplayTags::Character_Action_Unequip, 0));
+			}
+			else
+			{
+				PlayAnimMontage(MainWeapon->GetMontage(MyGameplayTags::Character_Action_Equip, 0));
+			}
+		}
+	}
+}
+
+void AMyCharacter::AutoToggleCombat()
+{
+	if (CombatComponent && CombatComponent->IsCombatEnabld() == false)
+	{
+		DoToggleCombat();
+	}
+}
+
+void AMyCharacter::DoAttack()
+{
+	const FGameplayTag& AttackGameplayTag = GetAttackPerform();
+	if (CanPerformAttack(AttackGameplayTag))
+	{
+		DoComboAttack(AttackGameplayTag);
+	}
+}
+
+void AMyCharacter::DoSpecialAttack()
+{
+}
+
+void AMyCharacter::DoHeavyAttack()
+{
+}
+
+void AMyCharacter::DoComboAttack(const FGameplayTag& InAttackGameplayTag)
+{
+	if (IsValid(StateComponent))
+	{
+		if (StateComponent->IsCurrentState(InAttackGameplayTag) == false)
+		{
+			if (bComboSequenceRunning && bCanComboInput)
+			{
+				++ComboCounter;
+			}
+			else
+			{
+				ResetComboAttack();
+				bComboSequenceRunning = true;
+			}
+
+			AttackByGameplayTag(InAttackGameplayTag);
+			GetWorld()->GetTimerManager().ClearTimer(ComboResetTimerHandle);
+		}
+		else if (bCanComboInput)
+		{
+			bSavedComboInput = true;
+		}
+	}
+}
+
+void AMyCharacter::ResetComboAttack()
+{
+	bComboSequenceRunning = false;
+	bCanComboInput = false;	
+	bSavedComboInput = false;
+	ComboCounter = 0;
+}
+
+void AMyCharacter::AttackByGameplayTag(const FGameplayTag& InAttackGameplayTag)
+{
+	if (IsValid(StateComponent) == false ||
+		IsValid(AttributeComponent) == false ||
+		IsValid(CombatComponent) == false)
+	{
+		return;
+	}
+
+	if (const AMyWeapon* MainWeapon = CombatComponent->GetMainWeapon())
+	{
+		StateComponent->SetState(MyGameplayTags::Character_State_Attacking);
+		StateComponent->ToggleMovementInput(false);
+		CombatComponent->SetLastAttackGameplayTag(InAttackGameplayTag);
+		AttributeComponent->ToggleRegenerateStamina(false);
+		
+		UAnimMontage* AttackAnimMontage = MainWeapon->GetMontage(InAttackGameplayTag, ComboCounter);
+		if (AttackAnimMontage == nullptr)
+		{
+			ComboCounter = 0;
+			AttackAnimMontage = MainWeapon->GetMontage(InAttackGameplayTag, ComboCounter);
+		}
+
+		PlayAnimMontage(AttackAnimMontage);
+
+		const float StaminaCost = MainWeapon->GetStaminaCost(InAttackGameplayTag);
+		AttributeComponent->DecreaseStamina(StaminaCost);
+		AttributeComponent->ToggleRegenerateStamina(true, 1.5f);
+	}
+}
+
+
+

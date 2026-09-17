@@ -25,10 +25,9 @@ public:
 	virtual void Unequip() {}
 	virtual void AttachToOwner(const FName InSocketName);
 
+	TObjectPtr<UStaticMesh> GetMeshAsset();
+
 protected:
-	UPROPERTY(EditAnywhere, Category = "MyAction|Mesh")
-	TObjectPtr<UStaticMesh> MeshAsset;
-	
 	UPROPERTY(EditAnywhere, Category = "MyAction|Mesh")
 	TObjectPtr<UStaticMeshComponent> MeshComponent;
 };

@@ -44,3 +44,14 @@ void UMyAnimInstance::AnimNotify_ResetMovementInput()
 		}
 	}
 }
+
+void UMyAnimInstance::AnimNotify_ResetState()
+{
+	if (AMyCharacter* MyCharacter = Cast<AMyCharacter>(OwningCharacter))
+	{
+		if (UMyStateComponent* StateComponent = MyCharacter->GetStateComponent())
+		{
+			StateComponent->ClearState();
+		}
+	}
+}

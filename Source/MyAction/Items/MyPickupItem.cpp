@@ -1,16 +1,34 @@
 #include "Items/MyPickupItem.h"
 #include "Components/StaticMeshComponent.h"
+#include "Equipments/MyEquipment.h"
 
 AMyPickupItem::AMyPickupItem()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
+	MeshComponent->SetCollisionObjectType(ECC_GameTraceChannel1);
+	MeshComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
+	MeshComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 }
 
 void AMyPickupItem::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void AMyPickupItem::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	if (TargetItemClass)
+	{
+		if (AMyEquipment* CDO = TargetItemClass->GetDefaultObject<AMyEquipment>())
+		{
+			MeshComponent->SetStaticMesh(CDO->GetMeshAsset());
+			// MeshComponent->SetSimulatePhysics(true);
+		}
+	}
 }
 
 void AMyPickupItem::Tick(float DeltaTime)
@@ -20,5 +38,19 @@ void AMyPickupItem::Tick(float DeltaTime)
 
 void AMyPickupItem::Interact(AActor* InTargetActor)
 {
-	UE_LOG(LogTemp, Log, TEXT("AMyPickupItem::Interact(AActor* InTargetActor)"));
+	if (UWorld* World = GetWorld())
+	{
+		if (InTargetActor && TargetItemClass)
+		{
+			FActorSpawnParameters ActorSpawnParam;
+			ActorSpawnParam.Owner = InTargetActor;
+
+			AMyEquipment* SpawnedItem = World->SpawnActor<AMyEquipment>(TargetItemClass, GetActorTransform(), ActorSpawnParam);
+			if (SpawnedItem)
+			{
+				SpawnedItem->Equip();
+				Destroy();
+			}
+		}
+	}
 }

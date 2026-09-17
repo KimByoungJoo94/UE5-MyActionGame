@@ -16,8 +16,14 @@ void UMyCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAc
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UMyCombatComponent::SetWeapon(AMyWeapon* InWeapon)
+void UMyCombatComponent::SetMainWeapon(AMyWeapon* InWeapon)
 {
+	if (IsValid(MainWeapon))
+	{
+		MainWeapon->Destroy();
+		MainWeapon = nullptr;
+	}
+
 	MainWeapon = InWeapon;
 }
 

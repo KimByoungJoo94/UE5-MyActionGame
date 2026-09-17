@@ -5,6 +5,7 @@
 #include "GameplayTagContainer.h"
 #include "MyStateComponent.generated.h"
 
+struct FGameplayTagContainer;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MYACTION_API UMyStateComponent : public UActorComponent
@@ -24,12 +25,15 @@ public:
 	FORCEINLINE FGameplayTag GetState() const { return CurrentState; }
 	FORCEINLINE bool IsMovementInputEnabled() const { return bIsMovementInputEnabled; }
 
-	void ToggleMovementInput(bool bInEnabled, float InDuration);
+	void ToggleMovementInput(bool bInEnabled, float InDuration = 0.1f);
 	
 	UFUNCTION()
 	void EnableMovementInput();
 
 	void ClearState();
+
+	bool IsCurrentStateEqualToAny(const FGameplayTagContainer& InGameplayTagContainer) const;
+	bool IsCurrentState(const FGameplayTag& InGameplayTag) const;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "MyAction|State")

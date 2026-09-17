@@ -32,4 +32,12 @@ void AMyEquipment::AttachToOwner(const FName InSocketName)
 	}
 }
 
+TObjectPtr<UStaticMesh> AMyEquipment::GetMeshAsset()
+{
+	if (MeshComponent)
+	{
+		return MeshComponent->GetStaticMesh();
+	}
 
+	return nullptr;
+}

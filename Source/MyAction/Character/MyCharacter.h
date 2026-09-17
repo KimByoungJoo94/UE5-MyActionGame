@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Common/MyGameplayTags.h"
 #include "MyCharacter.generated.h"
 
 class USpringArmComponent;
@@ -33,8 +34,13 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	bool IsMoving() const;
-
+	FORCEINLINE bool IsSprinting() const { return bSprinting; }
 	FORCEINLINE TObjectPtr<UMyStateComponent> GetStateComponent()  { return StateComponent; }
+
+	bool CanToggleCombat() const;
+
+	const FGameplayTag GetAttackPerform() const;
+	bool CanPerformAttack(const FGameplayTag& InAttackGameplayTag) const;
 
 protected:
 	void OnMoveActionTriggered(const FInputActionValue& InValue);
@@ -43,11 +49,24 @@ protected:
 	void OnSprintRollingActionCompleted();
 	void OnSprintRollingActionCanceled();
 	void OnInteractActionStarted();
-	
+	void OnToggleCombatActionStarted();
+	void OnAttackActionStarted();
+	void OnAttackActionCanceled();
+	void OnAttackActionTriggered();
+	void OnHeavyAttackActionStarted();
+
 	void StartSprint();
 	void StopSprint();
 	void DoRolling();
 	void DoInteraction();
+	void DoToggleCombat();
+	void AutoToggleCombat();
+	void DoAttack();
+	void DoSpecialAttack();
+	void DoHeavyAttack();
+	void DoComboAttack(const FGameplayTag& InAttackGameplayTag);
+	void ResetComboAttack();
+	void AttackByGameplayTag(const FGameplayTag& InAttackGameplayTag);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category = "MyAction|Camera")
@@ -59,18 +78,13 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "MyAction|Attribute", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMyAttributeComponent> AttributeComponent;
 
-	UPROPERTY(EditAnywhere, Category = "MyAction|Sprint")
-	float SprintSpeed = 750.0f;
-
-	UPROPERTY(EditAnywhere, Category = "MyAction|Sprint")
-	float NormalSpeed = 750.0f;
-
 	UPROPERTY(VisibleAnywhere, Category = "MyAction|Attribute", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMyStateComponent> StateComponent;
 
 	UPROPERTY(VisibleAnywhere, Category = "MyAction|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMyCombatComponent> CombatComponent;
 	
+protected:
 	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
 	TObjectPtr<UInputMappingContext> DefaultInputMappingContext;
 
@@ -86,6 +100,15 @@ private:
 	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
 	TObjectPtr<UInputAction> InteractAction;
 
+	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
+	TObjectPtr<UInputAction> ToggleCombatAction;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
+	TObjectPtr<UInputAction> AttackAction;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
+	TObjectPtr<UInputAction> HeavyAttackAction;
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "MyAction|UI")
 	TSubclassOf<UMyPlayHUDWidget> PlayHUDWidgetClass;
@@ -95,4 +118,21 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "MyAction|Anim")
 	TObjectPtr<UAnimMontage> RollingAnimMontage;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "MyAction|Sprint")
+	float SprintSpeed = 1000.0f;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Sprint")
+	float NormalSpeed = 750.0f;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Sprint")
+	bool bSprinting = false;
+
+protected:
+	bool bComboSequenceRunning = false;
+	bool bCanComboInput = false;	
+	bool bSavedComboInput = false;
+	int32 ComboCounter = 0;
+	FTimerHandle ComboResetTimerHandle;
 };

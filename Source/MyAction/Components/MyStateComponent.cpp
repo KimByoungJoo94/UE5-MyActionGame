@@ -16,7 +16,7 @@ void UMyStateComponent::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UMyStateComponent::ToggleMovementInput(bool bInEnabled, float InDuration)
+void UMyStateComponent::ToggleMovementInput(bool bInEnabled, float InDuration /*= 0.1f*/)
 {
 	if (bInEnabled)
 	{ 
@@ -43,5 +43,15 @@ void UMyStateComponent::EnableMovementInput()
 void UMyStateComponent::ClearState()
 {
 	CurrentState = FGameplayTag::EmptyTag;
+}
+
+bool UMyStateComponent::IsCurrentStateEqualToAny(const FGameplayTagContainer& InGameplayTagContainer) const
+{
+	return InGameplayTagContainer.HasTagExact(CurrentState);
+}
+
+bool UMyStateComponent::IsCurrentState(const FGameplayTag& InGameplayTag) const
+{
+	return CurrentState == InGameplayTag;
 }
 
