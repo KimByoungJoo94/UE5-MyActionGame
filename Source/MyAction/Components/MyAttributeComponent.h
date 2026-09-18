@@ -66,7 +66,7 @@ protected:
 	float MinStamina = 0.0f;
 
 	UPROPERTY(EditAnywhere, Category = "MyAction|Stamina")
-	float StaminaRegenRate = 0.2f;
+	float StaminaRegenRate = 1.0f;
 
 private:
 	FTimerHandle RegenerateStaminaTimerHandle;

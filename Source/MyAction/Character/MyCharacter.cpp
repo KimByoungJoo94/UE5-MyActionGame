@@ -136,6 +136,47 @@ bool AMyCharacter::CanPerformAttack(const FGameplayTag& InAttackGameplayTag) con
 		AttributeComponent->HasEnounghStamina(StaminaCost);
 }
 
+void AMyCharacter::ResetComboAttack()
+{
+	bComboSequenceRunning = false;
+	bCanComboInput = false;
+	bSavedComboInput = false;
+	ComboCounter = 0;
+}
+
+void AMyCharacter::EnableComboAttack()
+{
+	bCanComboInput = true;
+}
+
+void AMyCharacter::DisableComboAttack()
+{
+	if (CombatComponent)
+	{
+		bCanComboInput = false;
+
+		if (bSavedComboInput)
+		{
+			bSavedComboInput = false;
+			++ComboCounter;
+			AttackByGameplayTag(CombatComponent->GetLastAttackGameplayTag());
+		}
+	}
+}
+
+void AMyCharacter::FinishComboAttack(const float InDelay)
+{
+	if (StateComponent)
+	{
+		StateComponent->ToggleMovementInput(true);
+	}
+
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().SetTimer(ComboResetTimerHandle, this, &ThisClass::ResetComboAttack, InDelay, false);
+	}
+}
+
 void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -254,7 +295,7 @@ void AMyCharacter::StartSprint()
 		{
 			AttributeComponent->ToggleRegenerateStamina(false);
 			AttributeComponent->DecreaseStamina(0.1f);
-			bSprinting = false;
+			bSprinting = true;
 		}
 	}
 }
@@ -267,7 +308,7 @@ void AMyCharacter::StopSprint()
 		if (AttributeComponent)
 		{
 			AttributeComponent->ToggleRegenerateStamina(true);
-			bSprinting = true;
+			bSprinting = false;
 		}
 	}
 }
@@ -348,11 +389,21 @@ void AMyCharacter::DoAttack()
 }
 
 void AMyCharacter::DoSpecialAttack()
-{
+{	
+	if (CanPerformAttack(MyGameplayTags::Character_Attack_Special))
+	{
+		DoComboAttack(MyGameplayTags::Character_Attack_Special);
+	}
 }
 
 void AMyCharacter::DoHeavyAttack()
 {
+	AutoToggleCombat();
+
+	if (CanPerformAttack(MyGameplayTags::Character_Attack_Heavy))
+	{
+		DoComboAttack(MyGameplayTags::Character_Attack_Heavy);
+	}
 }
 
 void AMyCharacter::DoComboAttack(const FGameplayTag& InAttackGameplayTag)
@@ -372,21 +423,16 @@ void AMyCharacter::DoComboAttack(const FGameplayTag& InAttackGameplayTag)
 			}
 
 			AttackByGameplayTag(InAttackGameplayTag);
-			GetWorld()->GetTimerManager().ClearTimer(ComboResetTimerHandle);
+			if (UWorld* World = GetWorld())
+			{
+				World->GetTimerManager().ClearTimer(ComboResetTimerHandle);
+			}
 		}
 		else if (bCanComboInput)
 		{
 			bSavedComboInput = true;
 		}
 	}
-}
-
-void AMyCharacter::ResetComboAttack()
-{
-	bComboSequenceRunning = false;
-	bCanComboInput = false;	
-	bSavedComboInput = false;
-	ComboCounter = 0;
 }
 
 void AMyCharacter::AttackByGameplayTag(const FGameplayTag& InAttackGameplayTag)

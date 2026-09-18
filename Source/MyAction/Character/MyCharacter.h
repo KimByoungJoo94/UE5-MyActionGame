@@ -42,6 +42,11 @@ public:
 	const FGameplayTag GetAttackPerform() const;
 	bool CanPerformAttack(const FGameplayTag& InAttackGameplayTag) const;
 
+	void ResetComboAttack();
+	void EnableComboAttack();
+	void DisableComboAttack();
+	void FinishComboAttack(const float InDelay);
+
 protected:
 	void OnMoveActionTriggered(const FInputActionValue& InValue);
 	void OnLookActionTriggered(const FInputActionValue& InValue);
@@ -65,7 +70,7 @@ protected:
 	void DoSpecialAttack();
 	void DoHeavyAttack();
 	void DoComboAttack(const FGameplayTag& InAttackGameplayTag);
-	void ResetComboAttack();
+	
 	void AttackByGameplayTag(const FGameplayTag& InAttackGameplayTag);
 
 private:
