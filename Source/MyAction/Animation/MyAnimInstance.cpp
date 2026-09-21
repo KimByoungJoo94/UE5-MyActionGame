@@ -1,4 +1,5 @@
 #include "MyAnimInstance.h"
+#include "KismetAnimationLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Character/MyCharacter.h"
 #include "Components/MyStateComponent.h"
@@ -31,6 +32,8 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 		bShouldMove = GroundSpeed > 3.0f && OwningCharacterMovementComponent->GetCurrentAcceleration().Equals(FVector::ZeroVector) == false;
 		bIsFalling = OwningCharacterMovementComponent->IsFalling();
+
+		Direction = UKismetAnimationLibrary::CalculateDirection(Velocity, OwningCharacter->GetActorRotation());
 	}
 }
 

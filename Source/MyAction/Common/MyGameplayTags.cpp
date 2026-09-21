@@ -8,6 +8,7 @@ namespace MyGameplayTags
 	MY_DEFINE_GAMEPLAY_TAG(Character, State, Attacking);
 	MY_DEFINE_GAMEPLAY_TAG(Character, State, Rolling);
 	MY_DEFINE_GAMEPLAY_TAG(Character, State, GeneralAction);
+	MY_DEFINE_GAMEPLAY_TAG(Character, State, Death);
 	
 	MY_DEFINE_GAMEPLAY_TAG(Character, Action, Equip);
 	MY_DEFINE_GAMEPLAY_TAG(Character, Action, Unequip);

@@ -1,13 +1,14 @@
 #include "Items/MyPickupItem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Equipments/MyEquipment.h"
+#include "Common/MyDefines.h"
 
 AMyPickupItem::AMyPickupItem()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
-	MeshComponent->SetCollisionObjectType(ECC_GameTraceChannel1);
+	MeshComponent->SetCollisionObjectType(MY_COLLISION_OBJECT_INTERACTION);
 	MeshComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 	MeshComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 }

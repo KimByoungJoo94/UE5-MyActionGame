@@ -10,8 +10,10 @@
 #include "Components/MyAttributeComponent.h"
 #include "Components/MyStateComponent.h"
 #include "Components/MyCombatComponent.h"
+#include "Components/MyTargetingComponent.h"
 #include "UI/MyPlayHUDWidget.h"
 #include "Common/MyGameplayTags.h"
+#include "Common/MyDefines.h"
 #include "Interfaces/MyInteractionInterface.h"
 #include "Equipments/MyWeapon.h"
 
@@ -45,6 +47,7 @@ AMyCharacter::AMyCharacter()
 	AttributeComponent = CreateDefaultSubobject<UMyAttributeComponent>(TEXT("AttributeComponent"));
 	StateComponent = CreateDefaultSubobject<UMyStateComponent>(TEXT("StateComponent"));
 	CombatComponent = CreateDefaultSubobject<UMyCombatComponent>(TEXT("CombatComponent"));
+	TargetingComponent = CreateDefaultSubobject<UMyTargetingComponent>(TEXT("TargetingComponent"));
 }
 
 void AMyCharacter::BeginPlay()
@@ -197,6 +200,10 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Canceled, this, &ThisClass::OnAttackActionCanceled);
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ThisClass::OnAttackActionTriggered);
 		EnhancedInputComponent->BindAction(HeavyAttackAction, ETriggerEvent::Started, this, &ThisClass::OnHeavyAttackActionStarted);
+
+		EnhancedInputComponent->BindAction(LockOnTargetAction, ETriggerEvent::Started, this, &ThisClass::OnLockOnTargetActionStarted);
+		EnhancedInputComponent->BindAction(LeftTargetAction, ETriggerEvent::Started, this, &ThisClass::OnLeftTargetActionStarted);
+		EnhancedInputComponent->BindAction(RightTargetAction, ETriggerEvent::Started, this, &ThisClass::OnRightTargetActionStarted);
 	}
 }
 
@@ -222,7 +229,12 @@ void AMyCharacter::OnMoveActionTriggered(const FInputActionValue& InValue)
 }
 
 void AMyCharacter::OnLookActionTriggered(const FInputActionValue& InValue)
-{	
+{
+	if (TargetingComponent && TargetingComponent->IsLockOn())
+	{
+		return;
+	}
+
 	if (GetController())
 	{	
 		const FVector2D& MovementVector = InValue.Get<FVector2D>();
@@ -286,6 +298,30 @@ void AMyCharacter::OnHeavyAttackActionStarted()
 	DoHeavyAttack();
 }
 
+void AMyCharacter::OnLockOnTargetActionStarted()
+{
+	if (TargetingComponent)
+	{
+		TargetingComponent->ToggleLockOnff();
+	}
+}
+
+void AMyCharacter::OnLeftTargetActionStarted()
+{
+	if (TargetingComponent)
+	{
+		TargetingComponent->SwitchLockTargetActor(EMyTargetingSwitchDirection::Left);
+	}
+}
+
+void AMyCharacter::OnRightTargetActionStarted()
+{
+	if (TargetingComponent)
+	{
+		TargetingComponent->SwitchLockTargetActor(EMyTargetingSwitchDirection::Right);
+	}
+}
+
 void AMyCharacter::StartSprint()
 {
 	if (UCharacterMovementComponent* CharacterMovementComponent = GetCharacterMovement())
@@ -339,7 +375,7 @@ void AMyCharacter::DoInteraction()
 
 	TArray<AActor*> IgnoreActorArray;
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypeArray;
-	ObjectTypeArray.Add(UEngineTypes::ConvertToObjectType(ECC_GameTraceChannel1));
+	ObjectTypeArray.Add(UEngineTypes::ConvertToObjectType(MY_COLLISION_OBJECT_INTERACTION));
 
 	const bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(this, StartVector, EndVector, Radius, ObjectTypeArray, false, IgnoreActorArray, EDrawDebugTrace::ForDuration, HitResult, true);
 	if (bHit)

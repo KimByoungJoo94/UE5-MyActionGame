@@ -42,4 +42,7 @@ protected:
 
 	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "MyAction|MovementData")
 	bool bIsFalling;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MyAction|MovementData")
+	float Direction;
 };

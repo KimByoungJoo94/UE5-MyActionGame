@@ -6,9 +6,11 @@
 #include "MyWeapon.generated.h"
 
 class UMyCombatComponent;
+class UMyWeaponCollisionComponent;
 class UMyMontageActionDataAsset;
 class UAnimMontage;
 struct FGameplayTag;
+struct FHitResult;
 
 UCLASS()
 class MYACTION_API AMyWeapon : public AMyEquipment
@@ -25,6 +27,10 @@ public:
 	const FName GetEquipSocketName() const { return EquipSocketName; }
 	const FName GetUnequipSocketName() const { return UnequipSocketName; }
 	const float GetStaminaCost(const FGameplayTag& InGameplayTag) const { return StaminaCostMap.FindRef(InGameplayTag); }
+	float GetAttackDamage() const;
+	TObjectPtr<UMyWeaponCollisionComponent> GetWeaponCollisionComponent() const { return WeaponCollisionComponent; }
+
+	void OnHitActor(const FHitResult& InHitResult);
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "MyAction|Socket")
@@ -41,4 +47,13 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	TMap<FGameplayTag, float> StaminaCostMap;
+
+	UPROPERTY(EditAnywhere)
+	TObjectPtr<UMyWeaponCollisionComponent> WeaponCollisionComponent;
+
+	UPROPERTY(EditAnywhere)
+	float BaseDamage = 15.0f;
+
+	UPROPERTY(EditAnywhere)
+	TMap<FGameplayTag, float> DamageMultiplierMap;
 };

@@ -26,7 +26,33 @@ struct FMyAttributeChangeParam
 	float MaxValue;
 };
 
+UENUM()
+enum class EMyStatType : uint8
+{
+	Stamina,
+	Health,
+	Max,
+};
+
+USTRUCT()
+struct FMyStat
+{
+	GENERATED_BODY()
+
+public:
+	FORCEINLINE EMyStatType GetStatType() { return StatType; }
+	FORCEINLINE float GetBaseValue() { return BaseValue; }
+	FORCEINLINE float GetMaxValue() { return MaxValue; }
+
+private:
+	EMyStatType StatType = EMyStatType::Max;
+	float BaseValue = 0.f;
+	float MaxValue = 0.f;
+	// float MinValue;
+};
+
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAttributeChanged, EMyAttributeType InAttributeType, const FMyAttributeChangeParam& InChangeParam)
+DECLARE_MULTICAST_DELEGATE(FOnDeath)
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MYACTION_API UMyAttributeComponent : public UActorComponent
@@ -44,13 +70,17 @@ public:
 
 	FORCEINLINE float GetBaseStamina() { return BaseStamina; }
 	FORCEINLINE float GetMaxStamina() { return MaxStamina; }
-	
+	FORCEINLINE float GetBaseHeatlh() { return BaseHealth; }
+	FORCEINLINE float GetMaxHealth() { return MaxHealth; }
+
 	bool HasEnounghStamina(float InStamina) const;
 	void IncreaseStamina(float InStamina);
 	void DecreaseStamina(float InStamina);
 	void ToggleRegenerateStamina(bool bInEnabled, float InStartDelay = 2.0f);
+	void TakeDamageAmount(float InDamage);
 
 	FOnAttributeChanged& GetOnAttributeChanged() { return OnAttributeChanged; }
+	FOnDeath& GetOnDeath() { return OnDeath; }
 
 private:
 	void RegenerateStaminaTimer();
@@ -68,8 +98,15 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "MyAction|Stamina")
 	float StaminaRegenRate = 1.0f;
 
+	UPROPERTY(EditAnywhere, Category = "MyAction|Stamina")
+	float BaseHealth = 100.0f;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Stamina")
+	float MaxHealth = 100.0f;
+
 private:
 	FTimerHandle RegenerateStaminaTimerHandle;
 
 	FOnAttributeChanged OnAttributeChanged;
+	FOnDeath OnDeath;
 };

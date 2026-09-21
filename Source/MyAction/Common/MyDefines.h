@@ -1,0 +1,4 @@
+#pragma once
+
+#define MY_COLLISION_OBJECT_INTERACTION		ECC_GameTraceChannel1
+#define MY_COLLISION_OBJECT_TARGETING		ECC_GameTraceChannel2

@@ -1,4 +1,6 @@
 #include "Components/MyAttributeComponent.h"
+#include "Components/MyStateComponent.h"
+#include "Common/MyGameplayTags.h"
 
 
 UMyAttributeComponent::UMyAttributeComponent()
@@ -29,7 +31,7 @@ void UMyAttributeComponent::IncreaseStamina(float InStamina)
 	if (FMath::IsNearlyEqual(OldStamina, NewStamina) == false)
 	{
 		BaseStamina = NewStamina;
-		OnAttributeChanged.Broadcast(EMyAttributeType::Stamina, FMyAttributeChangeParam(BaseStamina, NewStamina, MinStamina, MaxStamina));
+		OnAttributeChanged.Broadcast(EMyAttributeType::Stamina, FMyAttributeChangeParam(BaseStamina, OldStamina, MinStamina, MaxStamina));
 	}
 }
 
@@ -41,7 +43,7 @@ void UMyAttributeComponent::DecreaseStamina(float InStamina)
 	if (FMath::IsNearlyEqual(OldStamina, NewStamina) == false)
 	{
 		BaseStamina = NewStamina;
-		OnAttributeChanged.Broadcast(EMyAttributeType::Stamina, FMyAttributeChangeParam(BaseStamina, NewStamina, MinStamina, MaxStamina));
+		OnAttributeChanged.Broadcast(EMyAttributeType::Stamina, FMyAttributeChangeParam(BaseStamina, OldStamina, MinStamina, MaxStamina));
 	}
 }
 
@@ -61,6 +63,34 @@ void UMyAttributeComponent::ToggleRegenerateStamina(bool bInEnabled, float InSta
 		else
 		{
 			WorldTimerManager.ClearTimer(RegenerateStaminaTimerHandle);
+		}
+	}
+}
+
+void UMyAttributeComponent::TakeDamageAmount(float InDamage)
+{	
+	const float OldHealth = BaseHealth;
+	const float NewHealth = FMath::Clamp(OldHealth - InDamage, 0.0f, MaxHealth);
+
+	if (FMath::IsNearlyEqual(OldHealth, NewHealth) == false)
+	{
+		BaseHealth = NewHealth;
+		OnAttributeChanged.Broadcast(EMyAttributeType::Health, FMyAttributeChangeParam(BaseHealth, OldHealth, 0.0f, MaxHealth));
+	}
+
+	if (BaseHealth <= 0.0f)
+	{
+		if (OnDeath.IsBound())
+		{
+			OnDeath.Broadcast();
+		}
+
+		if (AActor* OwnerActor = GetOwner())
+		{
+			if (UMyStateComponent* OwnerStateComponent = OwnerActor->FindComponentByClass<UMyStateComponent>())
+			{
+				OwnerStateComponent->SetState(MyGameplayTags::Character_State_Death);
+			}
 		}
 	}
 }

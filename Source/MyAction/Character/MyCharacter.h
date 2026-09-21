@@ -5,6 +5,7 @@
 #include "Common/MyGameplayTags.h"
 #include "MyCharacter.generated.h"
 
+class UMyTargetingComponent;
 class USpringArmComponent;
 class UCameraComponent;
 class UMyAttributeComponent;
@@ -59,6 +60,9 @@ protected:
 	void OnAttackActionCanceled();
 	void OnAttackActionTriggered();
 	void OnHeavyAttackActionStarted();
+	void OnLockOnTargetActionStarted();
+	void OnLeftTargetActionStarted();
+	void OnRightTargetActionStarted();
 
 	void StartSprint();
 	void StopSprint();
@@ -69,10 +73,9 @@ protected:
 	void DoAttack();
 	void DoSpecialAttack();
 	void DoHeavyAttack();
-	void DoComboAttack(const FGameplayTag& InAttackGameplayTag);
-	
+	void DoComboAttack(const FGameplayTag& InAttackGameplayTag);	
 	void AttackByGameplayTag(const FGameplayTag& InAttackGameplayTag);
-
+	
 private:
 	UPROPERTY(VisibleAnywhere, Category = "MyAction|Camera")
 	TObjectPtr<USpringArmComponent> SpringArmComponent;
@@ -89,6 +92,9 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "MyAction|Combat", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UMyCombatComponent> CombatComponent;
 	
+	UPROPERTY(VisibleAnywhere, Category = "MyAction|Combat", meta = (AllowPrivateAccess = "true"))
+	UMyTargetingComponent* TargetingComponent;
+
 protected:
 	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
 	TObjectPtr<UInputMappingContext> DefaultInputMappingContext;
@@ -113,6 +119,15 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
 	TObjectPtr<UInputAction> HeavyAttackAction;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
+	UInputAction* LockOnTargetAction;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
+	UInputAction* LeftTargetAction;
+
+	UPROPERTY(EditAnywhere, Category = "MyAction|Input")
+	UInputAction* RightTargetAction;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "MyAction|UI")
