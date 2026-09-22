@@ -47,7 +47,7 @@ protected:
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float TargetingRadius = 1300.0f;
+	float TargetingRadius = 1500.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float FaceLockOnRotationSpeed = 20.0f;

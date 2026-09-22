@@ -47,8 +47,8 @@ AMyEnemy::AMyEnemy()
 	if (LockOnWidgetComponent)
 	{
 		LockOnWidgetComponent->SetupAttachment(GetRootComponent());
-		LockOnWidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 50.0f));
-		LockOnWidgetComponent->SetDrawSize(FVector2D(30.0f, 30.0f));
+		LockOnWidgetComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 25.0f));
+		LockOnWidgetComponent->SetDrawSize(FVector2D(50.0f, 50.0f));
 		LockOnWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 		LockOnWidgetComponent->SetVisibility(false);
 	}
